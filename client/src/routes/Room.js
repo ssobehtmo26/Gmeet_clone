@@ -55,7 +55,7 @@ const Room = (props) => {
       .getUserMedia({ video: videoConstraints, audio: true })
       .then((stream) => {
         userVideo.current.srcObject = stream;
-        const name = JSON.parse(localStorage.getItem("email"));
+        const name = localStorage.getItem("email");
         setUsername(name);
         console.log(name);
         localStorage.clear();

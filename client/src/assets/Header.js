@@ -7,7 +7,15 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import "./Header.css"
 
-const header = () => {
+import { DataContext } from "../routes/CreateRoom";
+import { useContext } from "react";
+
+
+function Header(){
+
+    
+    const prof= useContext(DataContext);
+
     return (
        
         <div className="header">
@@ -16,12 +24,23 @@ const header = () => {
                 <span className="text">Meet Clone</span>
             </div>
             <div className="act-btn">
+                
+                {(prof)?(
+                    <div>
+                    {/* <img className="user-img" src={prof.picture}  /> */}
+                    <p>{prof.name}</p>
+                    </div>
+                ):(<div>
+                    
+                </div>)}
                 <FontAwesomeIcon className="icons" icon={faQuestionCircle} />
                 <FontAwesomeIcon className="icons" icon={faExclamationCircle} />
                 <FontAwesomeIcon className="icons" icon={faCog} />
                 <FontAwesomeIcon className="icons" icon={faUser} />
+
+                
             </div></div>
 
     )
 }
-export default header;
+export default Header;

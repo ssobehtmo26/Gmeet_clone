@@ -1,24 +1,74 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../assets/Header";
-import { useState } from "react";
+import { useState ,useEffect, createContext } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import axios from "axios";
+import { googleLogout, useGoogleLogin } from "@react-oauth/google";
 import { faKeyboard, faVideo } from "@fortawesome/free-solid-svg-icons";
 import "./CreateRoom.css";
 
+
+export const DataContext= createContext();
 const CreateRoom = (props) => {
-  const [email, setEmail] = useState();
+  const [email, setEmail] = useState('');
   const [generatedToken, setGeneratedToken] = useState();
   const [enteredToken, setEnteredToken] = useState();
   const navigate = useNavigate();
 
-  const emailHandler = (e) => {
-    setEmail(e.target.value);
+  const [user, setUser] = useState(null);
+
+  const [profile, setProfile] = useState(null);
+  
+  const login = useGoogleLogin({
+    onSuccess: (codeResponse) => {
+      setUser(codeResponse);
+      
+      console.log(codeResponse);
+    },
+    onError: (error) => console.log("Login Failed:", error),
+  });
+
+  
+  useEffect(() => {
+    if (user!=null) {
+      axios
+        .get(
+          `https://www.googleapis.com/oauth2/v1/userinfo?access_token=${user.access_token}`,
+          {
+            headers: {
+              Authorization: `Bearer ${user.access_token}`,
+              Accept: "application/json",
+            },
+          }
+        )
+        .then((res) => {
+          setProfile(res.data);
+
+
+          
+        })
+        .then(()=>{
+          setEmail(profile.name);
+    
+        }
+
+        )
+        .catch((err) => console.log(err));
+    }
+  }, [user]);
+
+  const logOut = () => {
+    googleLogout();
+    setProfile(null);
   };
+
+  
 
   const generateToken = () => {
     var rand = Math.random().toString(36).substring(2);
     setGeneratedToken(rand);
+    console.log(profile);
     return;
   };
 
@@ -28,13 +78,17 @@ const CreateRoom = (props) => {
 
   const joinMeet = () => {
     //STORING EMAIL IN LOCAL STORAGE
+    
     localStorage.setItem("email", JSON.stringify(email));
     navigate(`/room?roomID=${enteredToken}`);
   };
 
   return (
     <div className="home-page">
-      <Header />
+    <DataContext.Provider value={(profile)?(profile):null}>
+    <Header />
+    </DataContext.Provider>
+      
       <div className="body-content">
         <div className="left-side">
           <h2>Premium video meetings.</h2>
@@ -43,20 +97,17 @@ const CreateRoom = (props) => {
             We re-engineered the service we built for secure business
             meetings,Google Meet,to make it free and available for all
           </p>
-          <input
-            type="text"
-            className="input"
-            placeholder="Enter email"
-            onChange={emailHandler}
-          ></input>
 
-          <div className="action-btn">
+
+          {(profile!=null)?(<div>
+            <div className="action-btn">
             <div className="video-btn">
               <button type="button" className="btn" onClick={generateToken}>
                 <FontAwesomeIcon className="icons col" icon={faVideo} />
                 New Meeting
               </button>
             </div>
+            
             <div className="input-block">
               <div className="input-section">
                 <FontAwesomeIcon className="icon-block" icon={faKeyboard} />
@@ -74,6 +125,18 @@ const CreateRoom = (props) => {
             </div>
           </div>
           <div>{generatedToken}</div>
+            <button className="bttn" onClick={logOut}>Log out</button>
+          </div>):(
+            <button onClick={() => login()} className="btn">Sign in with Google  </button>
+          )}
+          {/* <input
+            type="text"
+            className="input"
+            placeholder="Enter email"
+            onChange={emailHandler}
+          ></input> */}
+
+          
           <hr />
           <div className="help-text">
             <a href="">Learn more</a> about Google Meet
