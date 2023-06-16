@@ -5,7 +5,7 @@ import {
     faCog,
     faUser
 } from "@fortawesome/free-solid-svg-icons";
-import "./header.css"
+import "./Header.css"
 
 const header = () => {
     return (
