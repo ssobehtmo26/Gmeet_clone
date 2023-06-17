@@ -9,8 +9,8 @@ function App() {
     <BrowserRouter>
      <Routes>
       {/* <Switch> */}
-      {/* <Route path="/" element={<Callpage />} /> */}
       <Route path="/" element={<HomePage />} />
+      <Route path="/callPage" element={<Callpage />} />
         {/* <Route exact path="/home">
           <HomePage />
         </Route> */}
