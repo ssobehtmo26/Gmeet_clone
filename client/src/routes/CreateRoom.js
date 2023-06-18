@@ -31,7 +31,7 @@ const CreateRoom = (props) => {
 
   
   useEffect(() => {
-    if (user!=null) {
+    if (user != null) {
       axios
         .get(
           `https://www.googleapis.com/oauth2/v1/userinfo?access_token=${user.access_token}`,
@@ -44,16 +44,7 @@ const CreateRoom = (props) => {
         )
         .then((res) => {
           setProfile(res.data);
-
-
-          
         })
-        .then(()=>{
-          setEmail(profile.name);
-    
-        }
-
-        )
         .catch((err) => console.log(err));
     }
   }, [user]);
@@ -63,16 +54,17 @@ const CreateRoom = (props) => {
     setProfile(null);
   };
 
-  
-
   const generateToken = () => {
     var rand = Math.random().toString(36).substring(2);
     setGeneratedToken(rand);
     console.log(profile);
+    console.log(profile.name);
+    //setEmail(profile.name);
     return;
   };
 
   const tokenHandler = (e) => {
+    setEmail(profile.name);
     setEnteredToken(e.target.value);
   };
 
