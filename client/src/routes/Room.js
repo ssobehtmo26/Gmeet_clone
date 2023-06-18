@@ -7,7 +7,22 @@ import webcam from "../assets/webcam.svg";
 import webcamoff from "../assets/webcamoff.svg";
 import "./Room.css";
 import { useLocation } from "react-router-dom";
-
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faVideo,
+  faMicrophone,
+  faPhone,
+  faVideoSlash,
+  faAngleUp,
+  faClosedCaptioning,
+  faDesktop,
+  faMicrophoneSlash,
+  faCircleInfo,
+  faMessage,
+  faArrowUpFromBracket,
+  faUsers,
+} from "@fortawesome/free-solid-svg-icons";
+import { useNavigate } from "react-router-dom";
 
 const Video = (props) => {
   const ref = useRef();
@@ -30,13 +45,15 @@ const Room = (props) => {
   const [username, setUsername] = useState();
   const [callername, setCallername] = useState();
 
+  const navigate = useNavigate();
+
   const socketRef = useRef();
   const userVideo = useRef();
   const peersRef = useRef([]);
 
   const params = new URLSearchParams(location.search);
   const roomID = params.get("roomID");
-  
+
   const videoConstraints = {
     minAspectRatio: 1.333,
     minFrameRate: 60,
@@ -62,7 +79,7 @@ const Room = (props) => {
         socketRef.current.emit("join room", roomID);
         console.log(`inviting to room ${roomID}`);
         socketRef.current.on("all users", (users) => {
-          console.log(users)
+          console.log(users);
           const peers = [];
           users.forEach((userID) => {
             const peer = createPeer(userID, socketRef.current.id, stream);
@@ -78,7 +95,7 @@ const Room = (props) => {
           setPeers(peers);
         });
         socketRef.current.on("user joined", (payload) => {
-          console.log("==",payload)
+          console.log("==", payload);
           console.log("user joined");
           const peer = addPeer(payload.signal, payload.callerID, stream);
           peersRef.current.push({
@@ -104,7 +121,7 @@ const Room = (props) => {
         });
 
         socketRef.current.on("receiving returned signal", (payload) => {
-          console.log("receiving returned signal")
+          console.log("receiving returned signal");
           const item = peersRef.current.find((p) => p.peerID === payload.id);
           item.peer.signal(payload.signal);
         });
@@ -153,92 +170,228 @@ const Room = (props) => {
   }
 
   return (
-    <div className="Container">
-      <video className="StyledVideo" muted ref={userVideo} autoPlay playsInline />
-      
-      <div className="Controls">
-      
-        <img className="ImgComponent"
-          src={videoFlag ? webcam : webcamoff}
-          onClick={() => {
-            if (userVideo.current.srcObject) {
-              userVideo.current.srcObject.getTracks().forEach(function (track) {
-                if (track.kind === "video") {
-                  if (track.enabled) {
-                    socketRef.current.emit("change", [...userUpdate,{
-                      id: socketRef.current.id,
-                      videoFlag: false,
-                      audioFlag,
-                    }]);
-                    track.enabled = false;
-                    setVideoFlag(false);
-                  } else {
-                    socketRef.current.emit("change", [...userUpdate,{
-                      id: socketRef.current.id,
-                      videoFlag: true,
-                      audioFlag,
-                    }]);
-                    track.enabled = true;
-                    setVideoFlag(true);
-                  }
+    <div className="Callpage-item">
+      <div className="Container">
+        <div className="VideoContainer">
+          <video
+            className="StyledVideo"
+            muted
+            ref={userVideo}
+            autoPlay
+            playsInline
+          />
+          <div className="Controls">
+            <img
+              className="ImgComponent"
+              src={videoFlag ? webcam : webcamoff}
+              onClick={() => {
+                if (userVideo.current.srcObject) {
+                  userVideo.current.srcObject
+                    .getTracks()
+                    .forEach(function (track) {
+                      if (track.kind === "video") {
+                        if (track.enabled) {
+                          socketRef.current.emit("change", [
+                            ...userUpdate,
+                            {
+                              id: socketRef.current.id,
+                              videoFlag: false,
+                              audioFlag,
+                            },
+                          ]);
+                          track.enabled = false;
+                          setVideoFlag(false);
+                        } else {
+                          socketRef.current.emit("change", [
+                            ...userUpdate,
+                            {
+                              id: socketRef.current.id,
+                              videoFlag: true,
+                              audioFlag,
+                            },
+                          ]);
+                          track.enabled = true;
+                          setVideoFlag(true);
+                        }
+                      }
+                    });
                 }
-              });
-            }
-          }}
-        />
-        &nbsp;&nbsp;&nbsp;
-        <img className="ImgComponent"
-          src={audioFlag ? micunmute : micmute}
-          onClick={() => {
-            if (userVideo.current.srcObject) {
-              userVideo.current.srcObject.getTracks().forEach(function (track) {
-                if (track.kind === "audio") {
-                  if (track.enabled) {
-                    socketRef.current.emit("change",[...userUpdate, {
-                      id: socketRef.current.id,
-                      videoFlag,
-                      audioFlag: false,
-                    }]);
-                    track.enabled = false;
-                    setAudioFlag(false);
-                  } else {
-                    socketRef.current.emit("change",[...userUpdate, {
-                      id: socketRef.current.id,
-                      videoFlag,
-                      audioFlag: true,
-                    }]);
-                    track.enabled = true;
-                    setAudioFlag(true);
-                  }
+              }}
+            />
+            &nbsp;&nbsp;&nbsp;
+            <img
+              className="ImgComponent"
+              src={audioFlag ? micunmute : micmute}
+              onClick={() => {
+                if (userVideo.current.srcObject) {
+                  userVideo.current.srcObject
+                    .getTracks()
+                    .forEach(function (track) {
+                      if (track.kind === "audio") {
+                        if (track.enabled) {
+                          socketRef.current.emit("change", [
+                            ...userUpdate,
+                            {
+                              id: socketRef.current.id,
+                              videoFlag,
+                              audioFlag: false,
+                            },
+                          ]);
+                          track.enabled = false;
+                          setAudioFlag(false);
+                        } else {
+                          socketRef.current.emit("change", [
+                            ...userUpdate,
+                            {
+                              id: socketRef.current.id,
+                              videoFlag,
+                              audioFlag: true,
+                            },
+                          ]);
+                          track.enabled = true;
+                          setAudioFlag(true);
+                        }
+                      }
+                    });
                 }
-              });
-            }
-          }}
-        />
-        <div className="name">{username}</div>
-      </div>
-      {peers.map((peer, index) => {
-        let audioFlagTemp = true;
-        let videoFlagTemp = true;
-        if (userUpdate) {
-          userUpdate.forEach((entry) => {
-            if (peer && peer.peerID && peer.peerID === entry.id) {
-              audioFlagTemp = entry.audioFlag;
-              videoFlagTemp = entry.videoFlag;
-            }
-          });
-        }
-        return (
-          <div key={peer.peerID} >
-            <Video peer={peer.peer} />
-            <div className="ControlSmall">
-              <img className="ImgComponentSmall" src={videoFlagTemp ? webcam : webcamoff} />
-              &nbsp;&nbsp;&nbsp;
-              <img className="ImgComponentSmall" src={audioFlagTemp ? micunmute : micmute} />
-            </div>
+              }}
+            />
+            <div className="name">{username}</div>
           </div>
-        );
-      })}
+        </div>
+        {peers.map((peer, index) => {
+          let audioFlagTemp = true;
+          let videoFlagTemp = true;
+          if (userUpdate) {
+            userUpdate.forEach((entry) => {
+              if (peer && peer.peerID && peer.peerID === entry.id) {
+                audioFlagTemp = entry.audioFlag;
+                videoFlagTemp = entry.videoFlag;
+              }
+            });
+          }
+          return (
+            <div key={peer.peerID} className="VideoContainer2">
+              <Video peer={peer.peer} />
+              <div className="ControlSmall">
+                <img
+                  className="ImgComponentSmall"
+                  src={videoFlagTemp ? webcam : webcamoff}
+                />
+                &nbsp;&nbsp;&nbsp;
+                <img
+                  className="ImgComponentSmall"
+                  src={audioFlagTemp ? micunmute : micmute}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="footer-item">
+        <div className="left-item">
+          <div className="text">
+            <iframe
+              src="https://free.timeanddate.com/clock/i8wb6p4g/n1884/tlin/fs16/avb/ftb/th2/ts1"
+              frameborder="0"
+              width="71"
+              height="20"
+            ></iframe>
+            | Meet id: {roomID}
+          </div>
+        </div>
+        <div className="center-item" style={{ marginRight: "20px" }}>
+          <FontAwesomeIcon
+            className="ficons"
+            icon={videoFlag ? faVideo : faVideoSlash}
+            onClick={() => {
+              if (userVideo.current.srcObject) {
+                userVideo.current.srcObject
+                  .getTracks()
+                  .forEach(function (track) {
+                    if (track.kind === "video") {
+                      if (track.enabled) {
+                        socketRef.current.emit("change", [
+                          ...userUpdate,
+                          {
+                            id: socketRef.current.id,
+                            videoFlag: false,
+                            audioFlag,
+                          },
+                        ]);
+                        track.enabled = false;
+                        setVideoFlag(false);
+                      } else {
+                        socketRef.current.emit("change", [
+                          ...userUpdate,
+                          {
+                            id: socketRef.current.id,
+                            videoFlag: true,
+                            audioFlag,
+                          },
+                        ]);
+                        track.enabled = true;
+                        setVideoFlag(true);
+                      }
+                    }
+                  });
+              }
+            }}
+          />
+          <FontAwesomeIcon
+            className="ficons"
+            icon={audioFlag ? faMicrophone : faMicrophoneSlash}
+            onClick={() => {
+              if (userVideo.current.srcObject) {
+                userVideo.current.srcObject
+                  .getTracks()
+                  .forEach(function (track) {
+                    if (track.kind === "audio") {
+                      if (track.enabled) {
+                        socketRef.current.emit("change", [
+                          ...userUpdate,
+                          {
+                            id: socketRef.current.id,
+                            videoFlag,
+                            audioFlag: false,
+                          },
+                        ]);
+                        track.enabled = false;
+                        setAudioFlag(false);
+                      } else {
+                        socketRef.current.emit("change", [
+                          ...userUpdate,
+                          {
+                            id: socketRef.current.id,
+                            videoFlag,
+                            audioFlag: true,
+                          },
+                        ]);
+                        track.enabled = true;
+                        setAudioFlag(true);
+                      }
+                    }
+                  });
+              }
+            }}
+          />
+          <FontAwesomeIcon className="ficons" icon={faArrowUpFromBracket} />
+          <FontAwesomeIcon
+            className="ficons"
+            icon={faPhone}
+            size="2xl"
+            beat
+            onClick={() => {
+              navigate("/");
+            }}
+          />
+        </div>
+        <div className="right-item">
+          <FontAwesomeIcon className="icons" icon={faCircleInfo} />
+          <FontAwesomeIcon className="icons" icon={faUsers} />
+          <FontAwesomeIcon className="icons" icon={faMessage} />
+        </div>
+      </div>
     </div>
   );
 };
