@@ -1,17 +1,16 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../assets/Header";
-import { useState ,useEffect, createContext } from "react";
+import { useState, useEffect, createContext } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import axios from "axios";
 import { googleLogout, useGoogleLogin } from "@react-oauth/google";
 import { faKeyboard, faVideo } from "@fortawesome/free-solid-svg-icons";
 import "./CreateRoom.css";
 
-
-export const DataContext= createContext();
+export const DataContext = createContext();
 const CreateRoom = (props) => {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [generatedToken, setGeneratedToken] = useState();
   const [enteredToken, setEnteredToken] = useState();
   const navigate = useNavigate();
@@ -19,17 +18,33 @@ const CreateRoom = (props) => {
   const [user, setUser] = useState(null);
 
   const [profile, setProfile] = useState(null);
-  
+
   const login = useGoogleLogin({
     onSuccess: (codeResponse) => {
       setUser(codeResponse);
-      
+
       console.log(codeResponse);
     },
     onError: (error) => console.log("Login Failed:", error),
   });
 
-  
+  useEffect(() => {
+    const loggedusername = localStorage.getItem("username");
+    const loggeduseremail = localStorage.getItem("useremail");
+    const loggeduserpic=localStorage.getItem("userpic");
+    if (loggedusername) {
+      var loggeduser={
+        name:loggedusername,
+        email:loggeduseremail,
+        picture:loggeduserpic
+      }
+      setProfile(loggeduser);
+      
+    } else {
+      setProfile(null);
+    }
+  }, []);
+
   useEffect(() => {
     if (user != null) {
       axios
@@ -44,6 +59,14 @@ const CreateRoom = (props) => {
         )
         .then((res) => {
           setProfile(res.data);
+          
+          
+          
+
+          localStorage.setItem("username", res.data.name );
+          localStorage.setItem("useremail", res.data.email );
+          localStorage.setItem("userpic", res.data.picture );
+
         })
         .catch((err) => console.log(err));
     }
@@ -52,6 +75,7 @@ const CreateRoom = (props) => {
   const logOut = () => {
     googleLogout();
     setProfile(null);
+    localStorage.clear();
   };
 
   const generateToken = () => {
@@ -69,18 +93,18 @@ const CreateRoom = (props) => {
   };
 
   const joinMeet = () => {
-    //STORING EMAIL IN LOCAL STORAGE
-    
+  
+
     localStorage.setItem("email", JSON.stringify(email));
     navigate(`/room?roomID=${enteredToken}`);
   };
 
   return (
     <div className="home-page">
-    <DataContext.Provider value={(profile)?(profile):null}>
-    <Header />
-    </DataContext.Provider>
-      
+      <DataContext.Provider value={profile ? profile : null}>
+        <Header />
+      </DataContext.Provider>
+
       <div className="body-content">
         <div className="left-side">
           <h2>Premium video meetings.</h2>
@@ -90,36 +114,41 @@ const CreateRoom = (props) => {
             meetings,Google Meet,to make it free and available for all
           </p>
 
+          {profile != null ? (
+            <div>
+              <div className="action-btn">
+                <div className="video-btn">
+                  <button type="button" className="btn" onClick={generateToken}>
+                    <FontAwesomeIcon className="icons col" icon={faVideo} />
+                    New Meeting
+                  </button>
+                </div>
 
-          {(profile!=null)?(<div>
-            <div className="action-btn">
-            <div className="video-btn">
-              <button type="button" className="btn" onClick={generateToken}>
-                <FontAwesomeIcon className="icons col" icon={faVideo} />
-                New Meeting
-              </button>
-            </div>
-            
-            <div className="input-block">
-              <div className="input-section">
-                <FontAwesomeIcon className="icon-block" icon={faKeyboard} />
-                <input
-                  type="text"
-                  className="input"
-                  placeholder="Enter Token"
-                  value={enteredToken}
-                  onChange={tokenHandler}
-                />
+                <div className="input-block">
+                  <div className="input-section">
+                    <FontAwesomeIcon className="icon-block" icon={faKeyboard} />
+                    <input
+                      type="text"
+                      className="input"
+                      placeholder="Enter Token"
+                      value={enteredToken}
+                      onChange={tokenHandler}
+                    />
+                  </div>
+                  <button className="bttn" onClick={joinMeet}>
+                    Join
+                  </button>
+                </div>
               </div>
-              <button className="bttn" onClick={joinMeet}>
-                Join
+              <div>{generatedToken}</div>
+              <button className="bttn" onClick={logOut}>
+                Log out
               </button>
             </div>
-          </div>
-          <div>{generatedToken}</div>
-            <button className="bttn" onClick={logOut}>Log out</button>
-          </div>):(
-            <button onClick={() => login()} className="btn">Sign in with Google  </button>
+          ) : (
+            <button onClick={() => login()} className="btn">
+              Sign in with Google{" "}
+            </button>
           )}
           {/* <input
             type="text"
@@ -128,7 +157,6 @@ const CreateRoom = (props) => {
             onChange={emailHandler}
           ></input> */}
 
-          
           <hr />
           <div className="help-text">
             <a href="">Learn more</a> about Google Meet
