@@ -41,15 +41,17 @@ const Room = (props) => {
   const [peers, setPeers] = useState([]);
   const [audioFlag, setAudioFlag] = useState(true);
   const [videoFlag, setVideoFlag] = useState(true);
+  const [screensharestat,setScreenShareStat]=useState(false);
   const [userUpdate, setUserUpdate] = useState([]);
   const [username, setUsername] = useState();
   const [callername, setCallername] = useState();
-
+  const [stream,setStream]=useState();
   const navigate = useNavigate();
 
   const socketRef = useRef();
   const userVideo = useRef();
   const peersRef = useRef([]);
+  const senders=useRef()
 
   const params = new URLSearchParams(location.search);
   const roomID = params.get("roomID");
@@ -169,12 +171,30 @@ const Room = (props) => {
     return peer;
   }
 
+  const ShareScreen=()=>{
+    navigator.mediaDevices.getDisplayMedia({cursor:true}).then(stream=>{
+      const screenTrack=stream.getTracks()[0];
+      setScreenShareStat(true);
+      senders.current.srcObject= stream;
+
+      screenTrack.onended=function () 
+      {
+        setScreenShareStat(false);
+        // senders.current.find(sender=> sender.track.kind==='video').replaceTrack(userVideo.current.getTracks()(1));
+      }
+    })
+  }
+
+
+
+
   return (
     <div className="Callpage-item">
       <div className="Container">
         <div className="VideoContainer">
           <video
-            className="StyledVideo"
+
+            
             muted
             ref={userVideo}
             autoPlay
@@ -258,6 +278,20 @@ const Room = (props) => {
             />
             <div className="name">{username}</div>
           </div>
+        </div>
+        <div>
+          {screensharestat?(
+            <p><video
+            className="StyledVideo"
+            ref={senders}
+            autoPlay
+            playsInline
+            >
+
+            </video></p>
+          ):(
+            <p></p>
+          )}
         </div>
         {peers.map((peer, index) => {
           let audioFlagTemp = true;
@@ -375,7 +409,11 @@ const Room = (props) => {
               }
             }}
           />
-          <FontAwesomeIcon className="ficons" icon={faArrowUpFromBracket} />
+          <FontAwesomeIcon className="ficons" icon={faArrowUpFromBracket} 
+          
+          size="2xl"
+          onClick={ShareScreen}
+           />
           <FontAwesomeIcon
             className="ficons"
             icon={faPhone}
