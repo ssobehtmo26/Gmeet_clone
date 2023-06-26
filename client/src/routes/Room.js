@@ -21,6 +21,8 @@ import {
   faMessage,
   faArrowUpFromBracket,
   faUsers,
+  faRecordVinyl,
+  faPause,
 } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
 
@@ -39,19 +41,24 @@ const Video = (props) => {
 const Room = (props) => {
   const location = useLocation();
   const [peers, setPeers] = useState([]);
+  const [shares, setShares] = useState([]);
   const [audioFlag, setAudioFlag] = useState(true);
   const [videoFlag, setVideoFlag] = useState(true);
-  const [screensharestat,setScreenShareStat]=useState(false);
   const [userUpdate, setUserUpdate] = useState([]);
   const [username, setUsername] = useState();
-  const [callername, setCallername] = useState();
-  const [stream,setStream]=useState();
+  //const [callername, setCallername] = useState();
+  const [stream, setStream] = useState();
+  const [screensharestat, setScreenShareStat] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const recording = [];
   const navigate = useNavigate();
 
   const socketRef = useRef();
   const userVideo = useRef();
   const peersRef = useRef([]);
-  const senders=useRef()
+  const shareRef = useRef([]);
+  const senders = useRef();
+  let mediaRecorder;
 
   const params = new URLSearchParams(location.search);
   const roomID = params.get("roomID");
@@ -63,77 +70,122 @@ const Room = (props) => {
     width: window.innerWidth / 2,
   };
 
-  useEffect(() => {
+  useEffect(async () => {
     socketRef.current = io.connect("/");
-    createStream();
-    console.log("creating stream");
-  }, []);
-
-  function createStream() {
-    navigator.mediaDevices
-      .getUserMedia({ video: videoConstraints, audio: true })
-      .then((stream) => {
-        userVideo.current.srcObject = stream;
-        const name = localStorage.getItem("email");
-        setUsername(name);
-        console.log(name);
-        localStorage.clear();
-        socketRef.current.emit("join room", roomID);
-        console.log(`inviting to room ${roomID}`);
-        socketRef.current.on("all users", (users) => {
-          console.log(users);
-          const peers = [];
-          users.forEach((userID) => {
-            const peer = createPeer(userID, socketRef.current.id, stream);
-            peersRef.current.push({
-              peerID: userID,
-              peer,
-            });
-            peers.push({
-              peerID: userID,
-              peer,
-            });
-          });
-          setPeers(peers);
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: videoConstraints,
+      audio: true,
+    });
+    setStream(stream);
+    userVideo.current.srcObject = stream;
+    const name = localStorage.getItem("email");
+    setUsername(name);
+    console.log(name);
+    localStorage.clear();
+    socketRef.current.emit("join room", roomID);
+    console.log(`inviting to room ${roomID}`);
+    socketRef.current.on("all users", (users) => {
+      console.log(users);
+      const peers = [];
+      users.forEach((userID) => {
+        const peer = createPeer(userID, socketRef.current.id, stream);
+        peersRef.current.push({
+          peerID: userID,
+          peer,
         });
-        socketRef.current.on("user joined", (payload) => {
-          console.log("==", payload);
-          console.log("user joined");
-          const peer = addPeer(payload.signal, payload.callerID, stream);
-          peersRef.current.push({
-            peerID: payload.callerID,
-            peer,
-          });
-          const peerObj = {
-            peer,
-            peerID: payload.callerID,
-          };
-          setPeers((users) => [...users, peerObj]);
-        });
-
-        socketRef.current.on("user left", (id) => {
-          console.log("user left");
-          const peerObj = peersRef.current.find((p) => p.peerID === id);
-          if (peerObj) {
-            peerObj.peer.destroy();
-          }
-          const peers = peersRef.current.filter((p) => p.peerID !== id);
-          peersRef.current = peers;
-          setPeers(peers);
-        });
-
-        socketRef.current.on("receiving returned signal", (payload) => {
-          console.log("receiving returned signal");
-          const item = peersRef.current.find((p) => p.peerID === payload.id);
-          item.peer.signal(payload.signal);
-        });
-
-        socketRef.current.on("change", (payload) => {
-          console.log("change");
-          setUserUpdate(payload);
+        peers.push({
+          peerID: userID,
+          peer,
         });
       });
-  }
+      setPeers(peers);
+    });
+    socketRef.current.on("user joined", (payload) => {
+      console.log("==", payload);
+      console.log("user joined");
+      const peer = addPeer(payload.signal, payload.callerID, stream);
+      peersRef.current.push({
+        peerID: payload.callerID,
+        peer,
+      });
+      const peerObj = {
+        peer,
+        peerID: payload.callerID,
+      };
+      setPeers((users) => [...users, peerObj]);
+    });
+
+    socketRef.current.on("user left", (id) => {
+      console.log("user left");
+      const peerObj = peersRef.current.find((p) => p.peerID === id);
+      if (peerObj) {
+        peerObj.peer.clear();
+      }
+      const peers = peersRef.current.filter((p) => p.peerID !== id);
+      peersRef.current = peers;
+      setPeers(peers);
+    });
+
+    socketRef.current.on("receiving returned signal", (payload) => {
+      console.log("receiving returned signal");
+      const item = peersRef.current.find((p) => p.peerID === payload.id);
+      item.peer.signal(payload.signal);
+    });
+
+    socketRef.current.on("change", (payload) => {
+      console.log("change");
+      setUserUpdate(payload);
+    });
+
+    /*socketRef.current.on("send to", async (users) => {
+      const screen = await navigator.mediaDevices.getDisplayMedia({ cursor: true })
+      const screenTrack = screen.getTracks()[0];
+      setScreenShareStat(true);
+      senders.current.srcObject = screen;
+      console.log(users);
+      users.forEach((userID) => {
+            const share = createShare(userID, socketRef.current.id, screen);
+            shareRef.current.push({
+              shareID: userID,
+              share,
+            });
+            shares.push({
+              shareID: userID,
+              share,
+            });
+          })
+          setShares(shares);
+        })
+
+    socketRef.current.on("screen shared", payload => {
+      peers.map(peer => {
+        if(peer.peerID == payload.callerID){
+          const callerID = payload.callerID;  
+          peer.on("signal", signal => {
+            socketRef.current.emit("returning share signal", {signal, callerID});
+          })
+
+          peer.signal(payload.signal);
+        }
+      })
+    });
+
+    socketRef.current.on("receiving returned share signal", (payload) => {
+      console.log("receiving returned share signal");
+      const item = shareRef.current.find((p) => p.shareID === payload.id);
+      item.share.signal(payload.signal);
+    });*/
+
+    /*socketRef.current.on("shared screen", payload => {
+      console.log("recieved sharing");
+      peers.map(peer => {
+        if(peer.peerID === payload.caller){
+          peer.peer.stream = payload.screen;
+        }
+      })
+    })*/
+    console.log("stream sent");
+  }, []);
 
   function createPeer(userToSignal, callerID, stream) {
     const peer = new Peer({
@@ -171,36 +223,160 @@ const Room = (props) => {
     return peer;
   }
 
-  const ShareScreen=()=>{
-    navigator.mediaDevices.getDisplayMedia({cursor:true}).then(stream=>{
-      const screenTrack=stream.getTracks()[0];
-      setScreenShareStat(true);
-      senders.current.srcObject= stream;
+  /*function createShare(userToSignal, senderID, stream) {
+    const peer = new Peer({
+      initiator: true,
+      trickle: false,
+      stream,
+    });
 
-      screenTrack.onended=function () 
-      {
-        setScreenShareStat(false);
-        // senders.current.find(sender=> sender.track.kind==='video').replaceTrack(userVideo.current.getTracks()(1));
+    peer.on("signal", signal => {
+      socketRef.current.emit("sending share", {userToSignal, senderID, signal})
+    });
+
+    return peer;
+  }*/
+
+  useEffect(() => {
+      peers.map((p) => {
+        p.peer.stream = stream;
+      });
+      console.log("changing stream");
+      //socketRef.current.emit("sharing screen", {roomID, stream});
+      console.log("sending stream");
+  }, [screensharestat])
+  
+
+  const ShareScreen = async () => {
+    
+    const screen = await navigator.mediaDevices.getDisplayMedia({
+      cursor: true,
+    });
+    
+    const screenTrack = screen.getTracks()[0];
+
+    peers.map(p => {
+      p.peer.removeStream(stream);
+      p.peer.addStream(screen);
+    })
+    setStream(screen);
+    
+    
+    /*userVideo.current.srcObject.getTracks().forEach(track => {
+      if(track.kind === "video"){
+        socketRef.current.emit("change", [
+          ...userUpdate, {
+            id: socketRef.current.id,
+            track: screen
+          }
+        ])
+      }
+    })*/
+    userVideo.current.srcObject = screen;
+
+    setScreenShareStat(true);
+    console.log("screen sharing started in main");
+    /*peers.map((p) => {
+      p.peer.stream = screen;
+    });*/
+
+    //socketRef.current.emit("sharing screen", roomID);
+    //console.log("requested for user list");
+    screenTrack.onended = async function () {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: videoConstraints,
+        audio: true,
+      });
+      setStream(stream);
+      /*userVideo.current.srcObject.getTracks().forEach(track => {
+        if(track.kind === "video"){
+          socketRef.current.emit("change", [
+            ...userUpdate, {
+              id: socketRef.current.id,
+              track: stream
+            }
+          ])
+        }
+      })*/
+
+      peers.map(p => {
+        p.peer.removeStream(screen);
+        p.peer.addStream(stream);
+      })
+
+      userVideo.current.srcObject = stream;
+      setScreenShareStat(false);
+      /*peers.map(async (p) => {
+        p.peer.stream = await navigator.mediaDevices.getUserMedia({
+          video: videoConstraints,
+          audio: true,
+        });
+      });*/
+      // senders.current.find(sender=> sender.track.kind==='video').replaceTrack(userVideo.current.getTracks()(1));
+    };
+  };
+
+  const RecordMeeting = () => {
+    navigator.mediaDevices.getDisplayMedia({
+      cursor: true,
+    }).then((stream) => {
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.start(1000);
+      mediaRecorder.ondataavailable = (e) => {
+        recording.push(e.data);
       }
     })
   }
 
-
-
+  const StopRecordMeeting = () => {
+    mediaRecorder.stop();
+    const blob = new Blob(recording, {
+      type: "video/webm"
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    document.body.appendChild(a);
+    a.style = "display: none";
+    a.href = url;
+    a.download = `meetingrecording-${roomID}.webm`;
+    a.click();
+  }
 
   return (
     <div className="Callpage-item">
+      {/*screensharestat && (
+        <div className="Sharescreen">
+          {screensharestat ? (
+            <p>
+              <video
+                className="StyledVideo"
+                ref={senders}
+                autoPlay
+                playsInline
+              ></video>
+            </p>
+          ) : (
+            <p></p>
+          )}
+        </div>
+          )*/}
+      {/*shares.map((share) => {
+        return (
+          <div className="Sharescreen">
+            <Video peer={share.share} key={share.shareID} />
+          </div>
+        );
+      })*/}
       <div className="Container">
         <div className="VideoContainer">
           <video
-
-            
+            className="StyledVideo"
             muted
             ref={userVideo}
             autoPlay
             playsInline
           />
-          <div className="Controls">
+          {!screensharestat && <div className="Controls">
             <img
               className="ImgComponent"
               src={videoFlag ? webcam : webcamoff}
@@ -277,23 +453,10 @@ const Room = (props) => {
               }}
             />
             <div className="name">{username}</div>
-          </div>
+          </div>}
         </div>
-        <div>
-          {screensharestat?(
-            <p><video
-            className="StyledVideo"
-            ref={senders}
-            autoPlay
-            playsInline
-            >
 
-            </video></p>
-          ):(
-            <p></p>
-          )}
-        </div>
-        {peers.map((peer, index) => {
+        {peers.map((peer) => {
           let audioFlagTemp = true;
           let videoFlagTemp = true;
           if (userUpdate) {
@@ -302,11 +465,12 @@ const Room = (props) => {
                 audioFlagTemp = entry.audioFlag;
                 videoFlagTemp = entry.videoFlag;
               }
+              
             });
           }
           return (
-            <div key={peer.peerID} className="VideoContainer2">
-              <Video peer={peer.peer} />
+            <div className="VideoContainer2">
+              <Video peer={peer.peer} key={peer.peerID} />
               <div className="ControlSmall">
                 <img
                   className="ImgComponentSmall"
@@ -409,17 +573,19 @@ const Room = (props) => {
               }
             }}
           />
-          <FontAwesomeIcon className="ficons" icon={faArrowUpFromBracket} 
-          
-          size="2xl"
-          onClick={ShareScreen}
-           />
+          <FontAwesomeIcon
+            className="ficons"
+            icon={faArrowUpFromBracket}
+          />
+          <FontAwesomeIcon className="ficons" icon={faRecordVinyl} onClick={RecordMeeting}/>
+          <FontAwesomeIcon className="ficons" icon={faPause} onClick={StopRecordMeeting}/>
           <FontAwesomeIcon
             className="ficons"
             icon={faPhone}
             size="2xl"
             beat
             onClick={() => {
+              socketRef.current.emit("cut call");
               navigate("/");
             }}
           />
