@@ -4,17 +4,17 @@ import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
 
-  apiKey: "AIzaSyBJ0VgVIaXnB5r2Cg9C4o78ZqBI4Z_UQhI",
+  apiKey: process.env.REACT_APP_API_KEY,
 
-  authDomain: "gmeet-clone-f9363.firebaseapp.com",
+  authDomain: process.env.REACT_APP_AUTHDOMAIN_ID,
 
-  projectId: "gmeet-clone-f9363",
+  projectId: process.env.REACT_APP_PROJECT_ID,
 
-  storageBucket: "gmeet-clone-f9363.appspot.com",
+  storageBucket: process.env.REACT_APP_STORAGE_BUCKET,
 
-  messagingSenderId: "370141363903",
+  messagingSenderId: process.env.REACT_APP_MESSAGESENDER_ID,
 
-  appId: "1:370141363903:web:286d2b618780f2ea5cd00a"
+  appId: process.env.REACT_APP_APP_ID
 
 };
 
