@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, createContext } from "react";
 import io from "socket.io-client";
 import Peer from "simple-peer";
 import micmute from "../assets/micmute.svg";
@@ -7,7 +7,9 @@ import webcam from "../assets/webcam.svg";
 import webcamoff from "../assets/webcamoff.svg";
 import "./Room.css";
 import { useLocation } from "react-router-dom";
+import Chat from './Chat';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import axios from "axios";
 import {
   faVideo,
   faMicrophone,
@@ -25,6 +27,8 @@ import {
   faPause,
 } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
+
+export const RoomDet = createContext();
 
 const Video = (props) => {
   const ref = useRef();
@@ -52,6 +56,7 @@ const Room = (props) => {
   const [isRecording, setIsRecording] = useState(false);
   const recording = [];
   const navigate = useNavigate();
+  const [showChat,setshowChat]=useState(false);
 
   const socketRef = useRef();
   const userVideo = useRef();
@@ -62,6 +67,7 @@ const Room = (props) => {
 
   const params = new URLSearchParams(location.search);
   const roomID = params.get("roomID");
+  localStorage.setItem("roomData", roomID);
 
   const videoConstraints = {
     minAspectRatio: 1.333,
@@ -536,6 +542,7 @@ const Room = (props) => {
               }
             }}
           />
+          
           <FontAwesomeIcon
             className="ficons"
             icon={audioFlag ? faMicrophone : faMicrophoneSlash}
@@ -573,12 +580,11 @@ const Room = (props) => {
               }
             }}
           />
-          <FontAwesomeIcon
-            className="ficons"
-            icon={faArrowUpFromBracket}
-          />
-          <FontAwesomeIcon className="ficons" icon={faRecordVinyl} onClick={RecordMeeting}/>
-          <FontAwesomeIcon className="ficons" icon={faPause} onClick={StopRecordMeeting}/>
+          <FontAwesomeIcon className="ficons" icon={faArrowUpFromBracket} 
+          
+          size="2xl"
+          onClick={ShareScreen}
+           />
           <FontAwesomeIcon
             className="ficons"
             icon={faPhone}
@@ -593,9 +599,10 @@ const Room = (props) => {
         <div className="right-item">
           <FontAwesomeIcon className="icons" icon={faCircleInfo} />
           <FontAwesomeIcon className="icons" icon={faUsers} />
-          <FontAwesomeIcon className="icons" icon={faMessage} />
+          <FontAwesomeIcon className="icons" icon={faMessage} onClick={()=>{setshowChat(true)}}/>
         </div>
       </div>
+      <div>{showChat?(<Chat/>):(<div></div>)}</div>
     </div>
   );
 };
