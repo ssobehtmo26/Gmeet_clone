@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, createContext } from "react";
 import io from "socket.io-client";
 import Peer from "simple-peer";
 import micmute from "../assets/micmute.svg";
@@ -7,7 +7,9 @@ import webcam from "../assets/webcam.svg";
 import webcamoff from "../assets/webcamoff.svg";
 import "./Room.css";
 import { useLocation } from "react-router-dom";
+import Chat from './Chat';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import axios from "axios";
 import {
   faVideo,
   faMicrophone,
@@ -23,6 +25,8 @@ import {
   faUsers,
 } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
+
+export const RoomDet = createContext();
 
 const Video = (props) => {
   const ref = useRef();
@@ -41,20 +45,22 @@ const Room = (props) => {
   const [peers, setPeers] = useState([]);
   const [audioFlag, setAudioFlag] = useState(true);
   const [videoFlag, setVideoFlag] = useState(true);
-  const [screensharestat,setScreenShareStat]=useState(false);
+  const [screensharestat, setScreenShareStat] = useState(false);
   const [userUpdate, setUserUpdate] = useState([]);
   const [username, setUsername] = useState();
   const [callername, setCallername] = useState();
-  const [stream,setStream]=useState();
+  const [stream, setStream] = useState();
   const navigate = useNavigate();
+  const [showChat,setshowChat]=useState(false);
 
   const socketRef = useRef();
   const userVideo = useRef();
   const peersRef = useRef([]);
-  const senders=useRef()
+  const senders = useRef();
 
   const params = new URLSearchParams(location.search);
   const roomID = params.get("roomID");
+  localStorage.setItem("roomData", roomID);
 
   const videoConstraints = {
     minAspectRatio: 1.333,
@@ -65,6 +71,30 @@ const Room = (props) => {
 
   useEffect(() => {
     socketRef.current = io.connect("/");
+    // fetch("http://localhost:8000/${roomID}")
+    //       .then((response) => response.json())
+
+    //       .then((data2) => {
+
+    //         console.log(data2);
+    //       })
+
+    //       .catch((error) => {
+    //         console.error(error);
+    //       });
+
+    // const fetchusers= async ()=>{
+    //   try {
+    //     const response = await axios.get(`http://localhost:8000/${roomID}`);
+    //     console.log(response.data); // Log the received data
+    //   } catch (error) {
+    //     console.error('Error:', error);
+    //   }
+    // }
+
+    // fetchusers();
+    //change location of get request tommorow
+
     createStream();
     console.log("creating stream");
   }, []);
@@ -77,8 +107,12 @@ const Room = (props) => {
         const name = localStorage.getItem("email");
         setUsername(name);
         console.log(name);
-        localStorage.clear();
+
+        const loggedusername = localStorage.getItem("username");
+
+        const loggeduserpic = localStorage.getItem("userpic");
         socketRef.current.emit("join room", roomID);
+
         console.log(`inviting to room ${roomID}`);
         socketRef.current.on("all users", (users) => {
           console.log(users);
@@ -95,6 +129,71 @@ const Room = (props) => {
             });
           });
           setPeers(peers);
+        });
+        console.log(socketRef.current.id);
+
+        // const giveusers= async ()=>{
+
+        //   const datauser={
+        //     roomid:roomID,
+        //     uid:socketRef.current.id,
+        //     name:loggedusername,
+        //     picture:loggeduserpic
+        //   }
+        //   console.log(datauser);
+        //   try {
+        //     const response = await axios.post(`http://localhost:8000/${roomID}`,datauser);
+        //     console.log(response.data);
+        //     // setUser1(response.data.users);
+        //      // Log the received data
+        //   } catch (error) {
+        //     console.error('Error:', error);
+        //   }
+        // }
+
+        // giveusers();
+
+        const datauser = {
+          roomid: roomID,
+          uid: socketRef.current.id,
+          name: loggedusername,
+          picture: loggeduserpic,
+        };
+        localStorage.setItem('currUser',socketRef.current.id);
+        const url="http://localhost:8000/"+roomID;
+        console.log(url);
+        fetch(url, {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify(datauser),
+        })
+          // .then((response) => response.json())
+          .then((data) => {
+            
+            console.log(data);
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+
+        socketRef.current.on("all users ID", (users) => {
+          console.log(1);
+          console.log(users);
+          users.forEach((userID) => {
+            localStorage.setItem(
+              "user",
+              JSON.stringify({
+                name: loggedusername,
+                picture: loggeduserpic,
+                userid: userID,
+              })
+            );
+            console.log(localStorage);
+          });
         });
         socketRef.current.on("user joined", (payload) => {
           console.log("==", payload);
@@ -171,35 +270,41 @@ const Room = (props) => {
     return peer;
   }
 
-  const ShareScreen=()=>{
-    navigator.mediaDevices.getDisplayMedia({cursor:true}).then(stream=>{
-      const screenTrack=stream.getTracks()[0];
+  const ShareScreen = () => {
+    navigator.mediaDevices.getDisplayMedia({ cursor: true }).then((stream) => {
+      const screenTrack = stream.getTracks()[0];
       setScreenShareStat(true);
-      senders.current.srcObject= stream;
+      senders.current.srcObject = stream;
 
-      screenTrack.onended=function () 
-      {
+      socketRef.current.on("all users", (users) => {
+        console.log(users);
+        const peers = [];
+        users.forEach((userID) => {
+          // const peer = createPeer(userID, socketRef.current.id, stream);
+          // peersRef.current.push({
+          //   peerID: userID,
+          //   peer,
+          // });
+          // peers.push({
+          //   peerID: userID,
+          //   peer,
+          // });
+          const peer = new Peer();
+          peer.call(userID, stream);
+        });
+      });
+      screenTrack.onended = function () {
         setScreenShareStat(false);
         // senders.current.find(sender=> sender.track.kind==='video').replaceTrack(userVideo.current.getTracks()(1));
-      }
-    })
-  }
-
-
-
+      };
+    });
+  };
 
   return (
     <div className="Callpage-item">
       <div className="Container">
         <div className="VideoContainer">
-          <video
-
-            
-            muted
-            ref={userVideo}
-            autoPlay
-            playsInline
-          />
+          <video muted ref={userVideo} autoPlay playsInline />
           <div className="Controls">
             <img
               className="ImgComponent"
@@ -280,16 +385,16 @@ const Room = (props) => {
           </div>
         </div>
         <div>
-          {screensharestat?(
-            <p><video
-            className="StyledVideo"
-            ref={senders}
-            autoPlay
-            playsInline
-            >
-
-            </video></p>
-          ):(
+          {screensharestat ? (
+            <p>
+              <video
+                className="StyledVideo"
+                ref={senders}
+                autoPlay
+                playsInline
+              ></video>
+            </p>
+          ) : (
             <p></p>
           )}
         </div>
@@ -372,6 +477,7 @@ const Room = (props) => {
               }
             }}
           />
+          
           <FontAwesomeIcon
             className="ficons"
             icon={audioFlag ? faMicrophone : faMicrophoneSlash}
@@ -409,11 +515,12 @@ const Room = (props) => {
               }
             }}
           />
-          <FontAwesomeIcon className="ficons" icon={faArrowUpFromBracket} 
-          
-          size="2xl"
-          onClick={ShareScreen}
-           />
+          <FontAwesomeIcon
+            className="ficons"
+            icon={faArrowUpFromBracket}
+            size="2xl"
+            onClick={ShareScreen}
+          />
           <FontAwesomeIcon
             className="ficons"
             icon={faPhone}
@@ -427,9 +534,10 @@ const Room = (props) => {
         <div className="right-item">
           <FontAwesomeIcon className="icons" icon={faCircleInfo} />
           <FontAwesomeIcon className="icons" icon={faUsers} />
-          <FontAwesomeIcon className="icons" icon={faMessage} />
+          <FontAwesomeIcon className="icons" icon={faMessage} onClick={()=>{setshowChat(true)}}/>
         </div>
       </div>
+      <div>{showChat?(<Chat/>):(<div></div>)}</div>
     </div>
   );
 };

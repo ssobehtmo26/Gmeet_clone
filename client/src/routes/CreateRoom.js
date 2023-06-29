@@ -14,7 +14,7 @@ const CreateRoom = (props) => {
   const [generatedToken, setGeneratedToken] = useState();
   const [enteredToken, setEnteredToken] = useState();
   const navigate = useNavigate();
-
+  
   const [user, setUser] = useState(null);
 
   const [profile, setProfile] = useState(null);
@@ -32,6 +32,7 @@ const CreateRoom = (props) => {
     const loggedusername = localStorage.getItem("username");
     const loggeduseremail = localStorage.getItem("useremail");
     const loggeduserpic=localStorage.getItem("userpic");
+    
     if (loggedusername) {
       var loggeduser={
         name:loggedusername,
@@ -61,7 +62,9 @@ const CreateRoom = (props) => {
           setProfile(res.data);
           
           
-          
+          localStorage.setItem("user",JSON.stringify({
+            name:res.data.name
+          }))
 
           localStorage.setItem("username", res.data.name );
           localStorage.setItem("useremail", res.data.email );
