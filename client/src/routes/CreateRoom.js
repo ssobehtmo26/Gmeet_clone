@@ -149,9 +149,11 @@ const CreateRoom = (props) => {
               </button>
             </div>
           ) : (
-            <button onClick={() => login()} className="btn">
-              Sign in with Google{" "}
-            </button>
+            <div className="action-btn">
+                <button onClick={() => login()} className="btn">
+                  Sign in with Google{" "}
+                </button>
+            </div>
           )}
           {/* <input
             type="text"

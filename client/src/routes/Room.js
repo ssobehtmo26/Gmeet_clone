@@ -308,7 +308,7 @@ const Room = (props) => {
     console.log("sending stream");
   }, [screensharestat]);*/
 
-  const ShareScreen = async () => {
+  /*const ShareScreen = async () => {
     const screen = await navigator.mediaDevices.getDisplayMedia({
       cursor: true,
     });
@@ -330,14 +330,14 @@ const Room = (props) => {
           }
         ])
       }
-    })*/
+    })
     userVideo.current.srcObject = screen;
 
     setScreenShareStat(true);
     console.log("screen sharing started in main");
     /*peers.map((p) => {
       p.peer.stream = screen;
-    });*/
+    });
 
     //socketRef.current.emit("sharing screen", roomID);
     //console.log("requested for user list");
@@ -356,7 +356,7 @@ const Room = (props) => {
             }
           ])
         }
-      })*/
+      })
 
       peers.map((p) => {
         p.peer.removeStream(screen);
@@ -370,10 +370,10 @@ const Room = (props) => {
           video: videoConstraints,
           audio: true,
         });
-      });*/
+      });
       // senders.current.find(sender=> sender.track.kind==='video').replaceTrack(userVideo.current.getTracks()(1));
     };
-  };
+  };*/
 
   const RecordMeeting = () => {
     navigator.mediaDevices
@@ -618,12 +618,6 @@ const Room = (props) => {
           />
           <FontAwesomeIcon
             className="ficons"
-            icon={faArrowUpFromBracket}
-            size="2xl"
-            onClick={ShareScreen}
-          />
-          <FontAwesomeIcon
-            className="ficons"
             icon={faRecordVinyl}
             onClick={RecordMeeting}
           />
@@ -652,7 +646,7 @@ const Room = (props) => {
             className="icons"
             icon={faMessage}
             onClick={() => {
-              showChat ? setshowChat(false) : setshowChat(true);
+              setshowChat(!showChat);
             }}
           />
         </div>
