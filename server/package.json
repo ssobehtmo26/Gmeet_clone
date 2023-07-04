@@ -17,7 +17,7 @@
     "socket.io": "^4.6.2"
   },
   "scripts": {
-    "start": "node server.js",
+    "start": "node server.js"
    
   },
   "repository": {
