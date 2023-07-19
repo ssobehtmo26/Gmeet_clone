@@ -36,13 +36,13 @@ Install dependencies
 Starting the server
 
 ```bash
-  // in server terminal
+  // server terminal
   npm start
 ```
 Starting the application
 
 ```bash
-  // in client terminal  
+  // client terminal  
   npm start
 ```
 
